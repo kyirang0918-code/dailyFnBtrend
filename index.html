@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily F&B Trend Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Pretendard:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header>
+            <div class="logo">🍽️ TrendBite</div>
+            <h1>Daily F&B Trends</h1>
+            <p id="summary-text">AI가 анали제한 오늘의 핵심 식음료 트렌드를 불러오는 중입니다...</p>
+            <div class="meta-info">
+                <span class="badge">Last Updated: <span id="update-date">...</span></span>
+            </div>
+        </header>
+
+        <main id="trends-grid" class="trends-grid">
+            <!-- 자바스크립트를 통해 카드들이 여기에 렌더링됩니다 -->
+        </main>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
