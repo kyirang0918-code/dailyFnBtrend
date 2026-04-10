@@ -1,11 +1,12 @@
 :root {
-    --bg-color: #FAFAFA; /* 기존 크림색에서 깔끔하고 밝은 오프화이트로 변경 */
+    --bg-color: #FFF8F0; /* 더 따뜻하고 부드러운 크림 베이지 */
     --text-main: #1A1A1A;
     --text-muted: #666666;
-    --accent: #FF5C35; /* 조금 더 쨍하고 세련된 다홍/오렌지 포인트 */
-    --accent-hover: #E04825;
+    --accent: #FF9E80; /* 귀엽고 따뜻한 피치-핑크 포인트 */
+    --accent-hover: #FF7A5A; /* 더 진한 피치 */
     --card-bg: #FFFFFF;
-    --border-dark: #1A1A1A; /* 완전 검정에 가까운 다크그레이로 선명함 부여 */
+    --border-dark: #1A1A1A;
+    --tag-bg: #EAEAEA; /* 기본 태그 배경 */
 }
 
 * {
@@ -17,12 +18,12 @@
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
-    font-family: 'Pretendard', sans-serif; /* 본문은 깔끔한 고딕 유지 */
+    font-family: 'Pretendard', sans-serif;
     min-height: 100vh;
-    /* 도트 패턴은 유지하되 대비를 낮춰 휑함을 없애고 깔끔하게 */
-    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 2px, transparent 2px);
+    /* 도트 패턴 대비를 더 낮춰 은은하게 */
+    background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px);
     background-size: 24px 24px;
-    overflow-x: hidden; /* 가로 스크롤 방지 */
+    overflow-x: hidden;
 }
 
 .dashboard-container {
@@ -38,7 +39,6 @@ header {
     animation: fadeInDown 0.8s ease-out;
 }
 
-/* 1. 일러스트 화면 꽉 차게 변경 (화면 밖으로 뻗어나감) */
 .food-icons {
     width: 100vw;
     position: relative;
@@ -55,24 +55,26 @@ header {
 
 .pixel-food-img {
     width: 100%;
-    min-width: 1200px; /* 화면이 좁아져도 이미지가 작아지지 않고 과감하게 잘리도록 설정 */
+    min-width: 1200px;
     height: auto;
     object-fit: cover;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    /* 기존 그림자 대신 이미지 자체의 픽셀 느낌을 강조 */
 }
 
+/* ✨ 신상 태그 디자인 수정: 아기자기한 피치핑크 택 */
 .logo.sub-copy {
     display: inline-block;
-    background: var(--border-dark);
-    color: #FFF;
+    background: var(--accent); /* 포인트 컬러 배경 */
+    color: #FFF; /* 흰색 글자로 가독성 확보 */
     border-radius: 20px;
-    padding: 0.5rem 1.2rem;
+    padding: 0.5rem 1.4rem;
     font-size: 0.9rem;
     font-weight: bold;
     margin-bottom: 1.5rem;
     letter-spacing: 0.5px;
+    transform: rotate(-3deg); /* 살짝 회전시켜 귀여움 가미 */
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
 }
 
 h1.main-title {
@@ -81,23 +83,22 @@ h1.main-title {
     font-weight: 800;
     color: var(--text-main);
     margin-bottom: 1rem;
-    /* 촌스러운 이중 그림자를 빼고 쨍한 포인트 컬러 그림자로 트렌디하게 */
-    text-shadow: 3px 3px 0px var(--accent);
+    text-shadow: 3px 3px 0px rgba(255, 255, 255, 0.8), 5px 5px 0px var(--accent);
     letter-spacing: -1px;
 }
 
 header p#summary-text {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(8px);
-    border: 1px solid #EAEAEA;
-    padding: 1.5rem 2rem;
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid #F5F5F5;
+    padding: 1.5rem 2.2rem;
+    border-radius: 20px; /* 더 둥글게 */
     font-family: 'Pretendard', sans-serif;
     font-size: 1.1rem;
     max-width: 750px;
     margin: 2rem auto;
     line-height: 1.6;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.03); /* 은은한 그림자로 세련되게 */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.03); /* 더 부드러운 그림자 */
     word-break: keep-all;
     color: #444;
 }
@@ -108,47 +109,48 @@ header p#summary-text {
     gap: 2.5rem;
 }
 
-/* 2. 카드 - 깔끔하고 선명한 Clean Retro 스타일 */
+/* 카드 - 더 둥글고 부드러운 Clean Retro */
 .trend-card {
     background: var(--card-bg);
     border: 2px solid var(--border-dark);
-    border-radius: 12px;
-    padding: 2.5rem 1.8rem 1.8rem; /* 넘버링 라벨 공간 확보 */
+    border-radius: 16px; /* 더 둥글게 */
+    padding: 2.5rem 1.8rem 1.8rem;
     position: relative;
-    box-shadow: 4px 4px 0px var(--border-dark); /* 깔끔한 솔리드 섀도우 */
+    box-shadow: 4px 4px 0px var(--border-dark);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     flex-direction: column;
     animation: fadeInUp 0.5s ease-out both;
 }
 
-/* 카드 호버 시 부드러운 반응 */
 .trend-card:hover {
     transform: translateY(-4px);
     box-shadow: 6px 6px 0px var(--border-dark);
 }
 
-/* 3. 트렌드 넘버링 - 촌스러운 동그라미에서 시크한 라벨로 변경 */
+/* 3. 트렌드 넘버링 라벨: 글자 안 잘리도록 가로 길이 증가 */
 .trend-number {
     position: absolute;
-    top: -14px;
-    left: 20px;
+    top: -16px; /* 살짝 위로 이동 */
+    left: 15px; /* 왼쪽 여백 축소 */
     font-size: 1.2rem;
     font-family: 'Galmuri9', sans-serif;
     color: #FFF;
     background: var(--border-dark);
-    padding: 0.3rem 1rem;
-    border-radius: 6px;
+    padding: 0.4rem 1.6rem; /* 좌우 여백을 충분히 늘려 글자 잘림 방지 */
+    border-radius: 8px; /* 더 둥글게 */
     z-index: 10;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
 }
 
 .trend-number::before {
     content: 'NO.';
     font-size: 0.8rem;
-    color: var(--accent);
+    color: var(--accent); /* 피치핑크 */
+    opacity: 0.9;
 }
 
 .card-content {
@@ -164,19 +166,22 @@ header p#summary-text {
     margin-bottom: 1rem;
 }
 
-/* 뱃지 디자인 단순화 및 모던화 */
+/* 2. 감성/신상 배지: 글자 안 보이는 문제 해결 및 아기자기하게 변경 */
 .sentiment {
     padding: 0.3rem 0.6rem;
-    border-radius: 4px;
+    border-radius: 6px; /* 더 둥글게 */
     font-family: 'Galmuri9', sans-serif;
     font-size: 0.8rem;
     font-weight: bold;
-    color: #FFF;
+    color: #1A1A1A; /* 어두운 글자색으로 가독성 확보 */
     letter-spacing: 0.5px;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.1); /* 귀여운 미니 그림자 */
 }
-.sentiment.hot { background: var(--accent); }
-.sentiment.positive { background: #4CAF50; }
-.sentiment.growing { background: #2196F3; }
+/* 파스텔 톤 배경색으로 귀여움 강조 및 글자 가독성 향상 */
+.sentiment.hot { background: #FFCEBF; } /* 부드러운 피치 */
+.sentiment.positive { background: #C8E6C9; } /* 부드러운 초록 */
+.sentiment.growing { background: #BBDEFB; } /* 부드러운 파랑 */
+.sentiment.new { background: #FFF9C4; color: #555; } /* 부드러운 노랑 신상 태그 */
 
 .trend-title {
     font-size: 1.4rem;
@@ -204,39 +209,43 @@ header p#summary-text {
     margin-bottom: 1.5rem;
 }
 
+/* 키워드: 아기자기한 스티커 느낌으로 변경 */
 .keyword {
-    background: #F4F4F4;
+    background: #FFF9D2; /* 부드러운 노랑 배경 */
     color: #555;
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
+    padding: 0.4rem 0.9rem;
+    border-radius: 12px; /* 더 둥글게 */
     font-size: 0.85rem;
     font-weight: 600;
-    transition: background 0.2s;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.05); /* 은은한 스티커 그림자 */
+    transition: background 0.2s, color 0.2s;
 }
 
 .keyword:hover {
-    background: #EAEAEA;
+    background: #FFE2B5;
     color: #111;
 }
 
-/* 버튼 디자인 모던화 */
+/* 소스 버튼: 더 둥글고 부드러운 피치핑크 버튼 */
 .source-btn {
     display: inline-block;
     width: 100%;
     text-align: center;
-    background: var(--border-dark); /* 시크한 블랙 버튼 */
+    background: var(--border-dark); /* 블랙 버튼 유지하되 */
     color: #FFF;
     text-decoration: none;
     padding: 0.9rem;
-    border-radius: 8px;
+    border-radius: 10px; /* 더 둥글게 */
     font-family: 'Galmuri9', sans-serif;
     font-size: 1rem;
     transition: all 0.2s;
+    box-shadow: 3px 3px 0px rgba(0,0,0,0.1);
 }
 
 .source-btn:hover {
-    background: var(--accent);
+    background: var(--accent); /* 호버 시 피치핑크로 */
     transform: translateY(-2px);
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.1);
 }
 
 /* 애니메이션 */
