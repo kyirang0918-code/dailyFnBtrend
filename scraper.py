@@ -113,9 +113,10 @@ def get_naver_trend(keyword):
         return None
 
 
-def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
+def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=5):
     """Gemini 2.5 Flash로 다각적 데이터를 분석하고 출처 간 교차 검증을 수행합니다."""
     import time
+    # 요약 품질을 위해 똑똑한 gemini-2.5-flash 모델 유지
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
     prompt = f"""
@@ -132,7 +133,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
 {json.dumps(community_data, ensure_ascii=False)}
 
 [분석 지시]
-위 세 가지 데이터를 분석하여, 현재 한국에서 실제로 유행하거나 화제가 되고 있는 구체적인 F&B 아이템 5개를 추출하세요.
+위 세 가지 데이터를 분석하여, 현재 한국에서 실제로 유행하거나 화제가 되고 있는 구체적인 F&B 아이템 6개를 추출하세요.
 단일 출처가 아닌, **여러 출처에서 공통으로 언급되는 유행 아이템**을 최우선으로 선정하세요.
 
 중요:
@@ -166,8 +167,9 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
                 
         except Exception as e:
             if attempt < max_retries - 1:
-                wait = (attempt + 1) * 10
-                print(f"   ⚠️ Gemini API 오류 ({e}). {wait}초 후 재시도... ({attempt+1}/{max_retries})")
+                # 대기 시간을 15초, 30초, 45초, 60초로 넉넉하게 늘려 서버 과부하를 피합니다.
+                wait = (attempt + 1) * 15
+                print(f"   ⚠️ Gemini API 서버 지연 ({e}). {wait}초 후 재시도... ({attempt+1}/{max_retries})")
                 time.sleep(wait)
             else:
                 raise
