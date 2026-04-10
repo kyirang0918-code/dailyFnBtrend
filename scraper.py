@@ -179,7 +179,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=2):
     # mentioned_in만 AI가 판단하도록 추가 (교차검증 로직은 Python에서)
     prompt = f"""
 당신은 대한민국 F&B(식음료) 트렌드 전문 분석가입니다.
-아래는 최근 수집된 유튜브, 네이버 블로그, 커뮤니티 데이터입니다.
+아래는 최근 3일간 수집된 유튜브, 네이버 블로그, 커뮤니티 데이터입니다.
 
 [유튜브]
 {json.dumps(videos_data, ensure_ascii=False)}
@@ -190,18 +190,30 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=2):
 [커뮤니티/SNS]
 {json.dumps(community_data, ensure_ascii=False)}
 
-위 데이터를 바탕으로 현재 한국에서 화제인 F&B 아이템 6개를 추출하세요.
+위 [수집된 데이터]만을 바탕으로 현재 한국에서 화제인 F&B 아이템을 추출하세요.
 
-규칙:
-- 반드시 실제 상품명, 메뉴명, 브랜드명으로 작성
-- "디저트 유행" 같은 모호한 표현 금지
-- sentiment는 "hot" / "growing" / "new" 중 하나
-- keywords는 실제 검색어 3~6개
-- mentioned_in은 아이템이 언급된 출처를 "youtube", "naver_blog", "community" 중에서 모두 표기
-- source_video는 참고한 URL 중 하나
+🚨 [매우 중요한 엄격한 규칙] 🚨
+1. 절대 지어내지 마세요: 반드시 위 데이터에 존재하는 아이템만 추출하세요. 과거의 유행(예: 두바이 초콜릿 등)을 임의로 추가하면 안 됩니다.
+2. 억지로 채우지 마세요: 확실한 트렌드가 3개뿐이라면 3개만 출력하세요. 5개를 무리해서 채울 필요 없습니다. (최대 5개)
+3. 중복 금지: 중복되거나 유사한 아이템(예: '버터떡'과 'CU 버터떡')은 반드시 하나의 항목으로 통합하세요.
+4. 출처 표기: 아이템을 도출하는 데 가장 큰 도움이 된 데이터의 URL 하나를 `source_link`에 넣고, 그 출처가 어디인지 `source_name`("유튜브", "네이버 블로그", "커뮤니티" 중 택 1)에 적어주세요.
 
-아래 JSON만 출력:
-{{"updated_at": "{today_str}", "summary": "한 문장 핵심 요약", "trends": [{{"id": 1, "title": "상품명", "description": "화제 이유 2~3문장", "sentiment": "hot", "keywords": ["키워드1", "키워드2"], "mentioned_in": ["youtube", "naver_blog"], "source_video": "URL"}}]}}
+아래 JSON 형식으로만 출력하세요. 백틱(```)이나 추가 설명 없이 순수 JSON만 출력하세요.
+{{
+  "updated_at": "{today_str}",
+  "summary": "오늘의 트렌드 핵심 요약 한 문장",
+  "trends": [
+    {{
+      "title": "상품명 (정확하게)",
+      "description": "화제 이유 2~3문장 요약",
+      "sentiment": "hot",
+      "keywords": ["키워드1", "키워드2"],
+      "mentioned_in": ["youtube", "naver_blog", "community"],
+      "source_link": "URL",
+      "source_name": "출처명"
+    }}
+  ]
+}}
 """
 
     data = {"contents": [{"parts": [{"text": prompt}]}]}
