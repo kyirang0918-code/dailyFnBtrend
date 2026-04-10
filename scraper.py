@@ -129,7 +129,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=2):
 [커뮤니티/SNS]
 {json.dumps(community_data, ensure_ascii=False)}
 
-위 데이터를 바탕으로 현재 한국에서 화제인 F&B 아이템 5개를 추출하세요.
+위 데이터를 바탕으로 현재 한국에서 화제인 F&B 아이템 6개를 추출하세요.
 
 규칙:
 - 반드시 실제 상품명, 메뉴명, 브랜드명으로 작성
