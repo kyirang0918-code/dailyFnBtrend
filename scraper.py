@@ -116,62 +116,68 @@ def get_naver_trend(keyword):
 
 def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
     import time
-    
-    # 모델 버전을 1.5-flash 또는 2.0-flash로 수정
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+
+    # ✅ 모델 폴백 리스트: 앞에서부터 순서대로 시도
+    MODEL_FALLBACKS = [
+        "gemini-2.5-flash-preview-04-17",   # 2.5 flash 최신 프리뷰
+        "gemini-2.0-flash",                  # 안정적인 2.0 flash
+        "gemini-1.5-flash",                  # 최후 보루
+    ]
 
     prompt = f"""
-    당신은 대한민국 F&B(식음료) 트렌드 전문 분석가입니다.
-    # ... (프롬프트 내용은 기존과 동일하게 유지) ...
-    """
+당신은 대한민국 F&B(식음료) 트렌드 전문 분석가입니다.
+... (기존 프롬프트 그대로)
+"""
 
-    # generationConfig를 추가하여 확실한 JSON 응답을 유도
-    data = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json"
-        }
-    }
+    data = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    for attempt in range(max_retries):
-        try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(data).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            with urllib.request.urlopen(req, timeout=60) as response:
-                result = json.loads(response.read().decode('utf-8'))
-                text = result['candidates'][0]['content']['parts'][0]['text'].strip()
-                
-                # generationConfig를 사용하면 마크다운 제거가 굳이 필요 없지만, 안전을 위해 유지
-                text = text.replace("```json", "").replace("```", "").strip()
-                return text
-                
-        except urllib.error.HTTPError as e:
-            if attempt < max_retries - 1:
-                if e.code == 429:
-                    wait = 65
-                    print(f"   ⚠️ 무료 할당량(RPM) 초과. 리셋을 위해 {wait}초 휴식... ({attempt+1}/{max_retries})")
-                elif e.code == 503:
-                    # 503 에러 시 재시도 대기 시간을 점진적으로 늘리는 방식을 추천합니다 (Exponential Backoff)
-                    wait = 15 * (attempt + 1)
-                    print(f"   ⚠️ 구글 서버 과부하(503). {wait}초 후 재시도... ({attempt+1}/{max_retries})")
+    for model in MODEL_FALLBACKS:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        print(f"   🤖 모델 시도: {model}")
+
+        for attempt in range(max_retries):
+            try:
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(data).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'}
+                )
+                with urllib.request.urlopen(req, timeout=90) as response:
+                    result = json.loads(response.read().decode('utf-8'))
+                    text = result['candidates'][0]['content']['parts'][0]['text'].strip()
+                    text = text.replace("```json", "").replace("```", "").strip()
+                    print(f"   ✅ 성공 모델: {model}")
+                    return text
+
+            except urllib.error.HTTPError as e:
+                error_body = e.read().decode('utf-8') if e.fp else ""
+                print(f"   ⚠️ HTTP {e.code} ({model}, 시도 {attempt+1}/{max_retries}): {error_body[:200]}")
+
+                if e.code == 404:
+                    # 모델 자체가 없음 → 즉시 다음 모델로
+                    print(f"   ❌ 모델 '{model}' 없음. 다음 모델로 전환.")
+                    break  # inner loop 탈출 → 다음 모델
+
+                elif e.code == 429:
+                    wait = 65 * (attempt + 1)  # 지수 증가
+                    print(f"   ⏳ 할당량 초과. {wait}초 대기...")
+                    time.sleep(wait)
+
+                elif e.code in (500, 503):
+                    wait = 15 * (2 ** attempt)  # 15 → 30 → 60초
+                    print(f"   ⏳ 서버 과부하. {wait}초 대기...")
+                    time.sleep(wait)
+
                 else:
                     wait = 10
-                    print(f"   ⚠️ API 오류 ({e.code}). {wait}초 후 재시도... ({attempt+1}/{max_retries})")
+                    time.sleep(wait)
+
+            except Exception as e:
+                wait = 10 * (attempt + 1)
+                print(f"   ⚠️ 네트워크 오류 ({e}). {wait}초 후 재시도...")
                 time.sleep(wait)
-            else:
-                error_body = e.read().decode('utf-8') if e.fp else "알 수 없는 에러"
-                print(f"❌ 최종 에러 사유: {e.code} - {error_body}")
-                raise
-        except Exception as e:
-            if attempt < max_retries - 1:
-                wait = 10
-                print(f"   ⚠️ 네트워크 지연 ({e}). {wait}초 후 재시도... ({attempt+1}/{max_retries})")
-                time.sleep(wait)
-            else:
-                raise
+
+    raise RuntimeError("모든 Gemini 모델 시도 실패. API 키 또는 네트워크를 확인하세요.")
 
 
 def enrich_with_naver_trends(trend_data):
