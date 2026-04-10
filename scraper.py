@@ -137,7 +137,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
 중요:
 - "디저트가 유행", "편의점 트렌드" 같은 모호한 양상 표현은 절대 금지.
 - 반드시 실제 상품명, 메뉴명, 또는 브랜드명을 중심으로 작성할 것.
-  (예: "삼각김밥 불닭버터맛", "탕후루", "맥도날드 크리스피 버거", "오뚜기 진라면")
+  (예: "삼각김밥 불닭버터맛", "버터떡", "맥도날드 크리스피 버거", "오뚜기 진라면 마라맛")
 - sentiment 값은 반드시 "hot"(지금 난리남), "growing"(상승세), "new"(신상) 중 하나로만 작성.
 - keywords 배열에는 실제 검색에 쓸 수 있는 구체적인 단어만 3~5개 넣을 것.
 - mentioned_in 배열에는 아이템이 언급된 출처를 "youtube", "naver_blog", "community" 중에서 찾아 모두 넣으세요.
