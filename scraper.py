@@ -3,6 +3,7 @@ import json
 import traceback
 import urllib.request
 import urllib.parse
+import urllib.error
 from datetime import datetime, timedelta, timezone
 from googleapiclient.discovery import build
 
@@ -117,13 +118,13 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=5):
     """Gemini AI로 데이터를 분석합니다. 확실하게 동작하는 모델명들로 순차적 폴백(Fallback)합니다."""
     import time
     
-    # 503, 404 에러 방지를 위해 구글 API가 보장하는 확실한 모델명들만 배치
+    # 404 에러 방지를 위해, 구글 API가 보장하는 확실한 버전명(001, 002)까지 명시적으로 추가
     models_to_try = [
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash", 
-        "gemini-1.5-pro-latest",
-        "gemini-pro",
-        "gemini-1.5-flash-8b"
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-001",
+        "gemini-1.5-flash-002",
+        "gemini-1.5-pro",
+        "gemini-1.0-pro"
     ]
 
     prompt = f"""
@@ -175,7 +176,20 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=5):
                 text = text.replace("```json", "").replace("```", "").strip()
                 return text
                 
+        except urllib.error.HTTPError as e:
+            # 404, 403 등 HTTP 에러 시 구글 서버가 뱉어내는 진짜 상세 사유를 읽어옵니다.
+            error_body = e.read().decode('utf-8') if e.fp else "No error body"
+            if attempt < max_retries - 1:
+                wait = (attempt + 1) * 5
+                print(f"   ⚠️ Gemini API 에러 ({e.code}). [{current_model}] 실패.")
+                print(f"      사유: {error_body.strip()}")
+                print(f"      → {wait}초 후 다음 모델로 우회 시도... ({attempt+1}/{max_retries})")
+                time.sleep(wait)
+            else:
+                print(f"❌ 최종 에러 사유: {error_body}")
+                raise
         except Exception as e:
+            # 그 외 네트워크 타임아웃 등의 에러
             if attempt < max_retries - 1:
                 wait = (attempt + 1) * 5
                 print(f"   ⚠️ Gemini API 응답 지연 ({e}). [{current_model}] 시도 실패. {wait}초 후 다음 모델로 우회 시도... ({attempt+1}/{max_retries})")
