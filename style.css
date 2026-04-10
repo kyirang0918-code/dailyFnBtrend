@@ -137,4 +137,115 @@ header p#summary-text {
     font-family: 'Galmuri9', sans-serif;
     color: #FFF;
     background: var(--border-dark);
-    padding: 0.3rem 1rem
+    padding: 0.3rem 1rem;
+    border-radius: 6px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.trend-number::before {
+    content: 'NO.';
+    font-size: 0.8rem;
+    color: var(--accent);
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.trend-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+/* 뱃지 디자인 단순화 및 모던화 */
+.sentiment {
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-family: 'Galmuri9', sans-serif;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #FFF;
+    letter-spacing: 0.5px;
+}
+.sentiment.hot { background: var(--accent); }
+.sentiment.positive { background: #4CAF50; }
+.sentiment.growing { background: #2196F3; }
+
+.trend-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 0.8rem;
+    line-height: 1.4;
+    word-break: keep-all;
+    color: var(--text-main);
+}
+
+.trend-desc {
+    color: var(--text-muted);
+    font-family: 'Pretendard', sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    flex: 1;
+    word-break: keep-all;
+}
+
+.keywords {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.keyword {
+    background: #F4F4F4;
+    color: #555;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.keyword:hover {
+    background: #EAEAEA;
+    color: #111;
+}
+
+/* 버튼 디자인 모던화 */
+.source-btn {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    background: var(--border-dark); /* 시크한 블랙 버튼 */
+    color: #FFF;
+    text-decoration: none;
+    padding: 0.9rem;
+    border-radius: 8px;
+    font-family: 'Galmuri9', sans-serif;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.source-btn:hover {
+    background: var(--accent);
+    transform: translateY(-2px);
+}
+
+/* 애니메이션 */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
