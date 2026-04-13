@@ -38,14 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 naverBadge = `<span class="sentiment" style="background:${color}; margin-left:8px;">${arrow}</span>`;
             }
 
-            // 출처 교차 검증 뱃지 추가 (파이썬에서 넘겨준 데이터 기반)
-            let verifiedBadge = '';
-            if (trend.cross_verified !== undefined) {
-                verifiedBadge = trend.cross_verified 
-                    ? `<span class="sentiment" style="background:#f1f1f1; margin-left:8px; border-style:dashed; color:#555;">✅ 교차검증됨</span>` 
-                    : `<span class="sentiment" style="background:#f1f1f1; margin-left:8px; border-style:dashed; color:#555;">👁️ 단일출처</span>`;
-            }
-
             const card = document.createElement('div');
             card.className = `trend-card card-${index + 1}`;
             
