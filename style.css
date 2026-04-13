@@ -53,12 +53,12 @@ header {
     overflow: hidden;
 }
 
+/* 상단 이미지가 잘리지 않고 예쁘게 비율 유지되도록 수정 */
 .pixel-food-img {
-    /* 복잡한 위치 속성은 다 지우고 아래 세 줄만 남겨주세요! */
     width: 100%; 
-    max-width: 1000px; /* 이미지가 너무 거대해지는 걸 막아줍니다 */
+    max-width: 1000px;
     height: auto;
-    object-fit: contain; /* 이미지가 잘리지 않고 예쁘게 비율 유지 */
+    object-fit: contain;
 }
 
 /* ✨ 신상 태그 디자인 수정: 아기자기한 피치핑크 택 */
@@ -163,6 +163,9 @@ header p#summary-text {
     justify-content: flex-start;
     align-items: center;
     margin-bottom: 1rem;
+    /* 카드가 좁아져도 뱃지가 아래로 예쁘게 내려가도록 수정 */
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 /* 2. 감성/신상 배지: 글자 안 보이는 문제 해결 및 아기자기하게 변경 */
@@ -175,6 +178,8 @@ header p#summary-text {
     color: #1A1A1A; /* 어두운 글자색으로 가독성 확보 */
     letter-spacing: 0.5px;
     box-shadow: 2px 2px 0px rgba(0,0,0,0.1); /* 귀여운 미니 그림자 */
+    /* 글자가 줄바꿈되어 쪼개지지 않도록 강제 한 줄 처리 */
+    white-space: nowrap;
 }
 /* 파스텔 톤 배경색으로 귀여움 강조 및 글자 가독성 향상 */
 .sentiment.hot { background: #FFCEBF; } /* 부드러운 피치 */
