@@ -11,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-        const data = trendData;
+        // trendData가 로드되지 않았을 때를 대비한 안전 장치
+        const data = typeof trendData !== 'undefined' ? trendData : {};
 
         if (data.error) {
             summaryEl.textContent = `오류: ${data.error}`;
@@ -23,12 +24,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.innerHTML = '';
 
-        data.trends.forEach((trend, index) => {
+        (data.trends || []).forEach((trend, index) => {
             const s = sentimentMap[trend.sentiment] || { emoji: '🍽️', label: trend.sentiment };
             const keywordsHTML = (trend.keywords || [])
                 .map(kw => `<span class="keyword">#${kw}</span>`)
                 .join('');
 
+            // 네이버 검색량 뱃지 추가
             let naverBadge = '';
             if (trend.naver_trend) {
                 const arrow = trend.naver_trend.is_rising ? '▲ 네이버 검색 상승 중' : '▽ 네이버 검색 감소세';
@@ -36,20 +38,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 naverBadge = `<span class="sentiment" style="background:${color}; margin-left:8px;">${arrow}</span>`;
             }
 
+            // 출처 교차 검증 뱃지 추가 (파이썬에서 넘겨준 데이터 기반)
+            let verifiedBadge = '';
+            if (trend.cross_verified !== undefined) {
+                verifiedBadge = trend.cross_verified 
+                    ? `<span class="sentiment" style="background:#f1f1f1; margin-left:8px; border-style:dashed; color:#555;">✅ 교차검증됨</span>` 
+                    : `<span class="sentiment" style="background:#f1f1f1; margin-left:8px; border-style:dashed; color:#555;">👁️ 단일출처</span>`;
+            }
+
             const card = document.createElement('div');
             card.className = `trend-card card-${index + 1}`;
             
+            // source_link 또는 source_video 등 데이터 변수명 호환성 처리
+            const linkUrl = trend.source_link || trend.source_video || '#';
+            const linkName = trend.source_name || '출처';
+
             card.innerHTML = `
                 <div class="trend-number">${index + 1}</div>
                 <div class="card-content">
                     <div class="trend-header">
                         <span class="sentiment ${trend.sentiment}">${s.emoji} ${s.label}</span>
                         ${naverBadge}
+                        ${verifiedBadge}
                     </div>
                     <h3 class="trend-title">${trend.title}</h3>
                     <p class="trend-desc">${trend.description}</p>
                     <div class="keywords">${keywordsHTML}</div>
-                    <a href="${trend.source_link}" class="source-btn" target="_blank">${trend.source_name} 확인하기</a>
+                    <a href="${linkUrl}" class="source-btn" target="_blank">${linkName} 확인하기</a>
                 </div>
             `;
             grid.appendChild(card);
