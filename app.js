@@ -73,21 +73,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     let localCount = 0;
     fireBtn.textContent = `도움되었다면 🔥를 눌러주세요 (...)`;
 
-    // 1. 파티클 애니메이션 함수
+    // 1. 화려하게 터지는 폭죽 애니메이션 함수
     const triggerParticle = (button) => {
         const container = button.parentElement;
-        const particle = document.createElement('div');
         
-        particle.textContent = '🔥';
-        particle.className = 'fire-particle';
-        particle.style.left = `calc(50% - 12px)`;
-        particle.style.top = `10px`;
-        
-        const randomX = (Math.random() - 0.5) * 80;
-        particle.style.setProperty('--tx', `${randomX}px`);
-        
-        container.appendChild(particle);
-        setTimeout(() => particle.remove(), 800);
+        // 한 번 클릭할 때마다 6~10개의 파티클이 터집니다
+        const particleCount = Math.floor(Math.random() * 5) + 6;
+        const emojis = ['🔥', '🔥', '🔥', '✨', '💥']; // 불꽃 위주에 반짝임과 스파크 추가
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            
+            particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+            
+            // JS 애니메이션 전용 스타일 세팅 (CSS 충돌 방지)
+            particle.style.position = 'absolute';
+            particle.style.left = `calc(50% - 15px)`;
+            particle.style.top = `10px`;
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '5';
+            particle.style.userSelect = 'none';
+            
+            container.appendChild(particle);
+
+            // X축: 좌우로 넓게 퍼짐 (-120px ~ +120px)
+            const tx = (Math.random() - 0.5) * 240;
+            // Y축: 위로 높게 솟구침 (-80px ~ -200px)
+            const ty = (Math.random() * -120) - 80;
+            // 랜덤 회전각 (-90도 ~ +90도)
+            const rot = (Math.random() - 0.5) * 180;
+            // 랜덤 최종 크기 (0.8배 ~ 2.0배)
+            const endScale = Math.random() * 1.2 + 0.8;
+            
+            const duration = Math.random() * 600 + 600; // 0.6초 ~ 1.2초의 랜덤 지속시간
+
+            // 최신 Web Animations API를 사용해 폭죽 궤적 그리기
+            particle.animate([
+                { transform: 'translate(0, 0) scale(0.5) rotate(0deg)', opacity: 1 },
+                { transform: `translate(${tx}px, ${ty}px) scale(${endScale}) rotate(${rot}deg)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0, 0.9, 0.5, 1)', // 초반에 확 터지고 끝에서 천천히 사라지는 타이밍
+                fill: 'forwards'
+            });
+
+            // 애니메이션이 끝나면 DOM에서 청소
+            setTimeout(() => particle.remove(), duration);
+        }
     };
 
     // 2. 회원님의 실제 Firebase 데이터베이스 연동 (실시간 누적 로직)
@@ -142,7 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 3. 버튼 클릭 시 동작
     fireBtn.addEventListener('click', function() {
-        triggerParticle(this);
+        triggerParticle(this); // 화려해진 파티클 폭발!
         
         // 클릭하자마자 화면의 숫자 먼저 1 올리기 (빠른 반응속도 체감)
         localCount++;
