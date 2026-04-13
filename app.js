@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (trend.naver_trend) {
                 const arrow = trend.naver_trend.is_rising ? '▲ 네이버 검색 상승 중' : '▽ 네이버 검색 감소세';
                 const color = trend.naver_trend.is_rising ? '#B3E2A7' : '#FFD6D6';
-                naverBadge = `<span class="sentiment" style="background:${color}; margin-left:8px;">${arrow}</span>`;
+                naverBadge = `<span class="sentiment" style="background:${color};">${arrow}</span>`;
             }
             let verifiedBadge = '';
             if (trend.cross_verified) {
