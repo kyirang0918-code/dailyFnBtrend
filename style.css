@@ -163,8 +163,9 @@ header p#summary-text {
     justify-content: flex-start;
     align-items: center;
     margin-bottom: 1rem;
-    flex-wrap: wrap;   /* ✅ 다시 wrap으로 */
-    gap: 6px;
+    /* 카드가 좁아져도 뱃지가 아래로 예쁘게 내려가도록 수정 */
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 /* 2. 감성/신상 배지: 글자 안 보이는 문제 해결 및 아기자기하게 변경 */
@@ -302,20 +303,9 @@ header p#summary-text {
 }
 
 .fire-particle {
+    /* JS에서 화려한 애니메이션을 직접 통제하므로, 여기서는 방해되는 속성을 다 지우고 뼈대만 남깁니다! */
     position: absolute;
-    font-size: 1.5rem;
     pointer-events: none;
     z-index: 5;
-    animation: floatUp 0.8s ease-out forwards;
-}
-
-@keyframes floatUp {
-    0% {
-        opacity: 1;
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translate(var(--tx), -80px) scale(1.5);
-    }
+    user-select: none;
 }
