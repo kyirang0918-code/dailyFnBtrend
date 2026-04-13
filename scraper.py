@@ -208,7 +208,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
 
     for model in MODEL_FALLBACKS:
         # ✅ 마크다운 링크 형식을 제거하고 순수한 URL 문자열만 사용하도록 수정
-        url = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){model}:generateContent?key={GEMINI_API_KEY}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         print(f"   🤖 모델 시도: {model}")
 
         for attempt in range(max_retries):
