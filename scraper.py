@@ -210,7 +210,8 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
     last_error = None
 
     for model in MODEL_FALLBACKS:
-        url = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){model}:generateContent?key={GEMINI_API_KEY}"
+        # ✅ 마크다운 기호 완전히 제거! 파이썬이 인식할 수 있는 순수 URL로 수정
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         print(f"   🤖 모델 시도: {model}")
 
         for attempt in range(max_retries):
@@ -298,9 +299,9 @@ if __name__ == "__main__":
             raise ValueError("GEMINI_API_KEY 시크릿이 설정되지 않았습니다!")
 
         print("1. 유튜브 최신 트렌드 수집 중...")
-        # 💡 유튜브 검색 API는 OR 대신 | 기호를 써야 합니다! (매우 중요)
+        # 💡 유튜브 검색 API 키워드 최적화: 검색이 잘 잡히도록 유튜브 친화적인 핵심 키워드로 재구성
         recent_videos = get_latest_youtube_trends(
-            "편의점 신상|신상 디저트|디저트 유행|유행 막차",
+            "편의점 신상|디저트 먹방|신메뉴 리뷰|핫플 디저트",
             max_results=7
         )
         print(f"   → 영상 {len(recent_videos)}개 수집 완료.")
