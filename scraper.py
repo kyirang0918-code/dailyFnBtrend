@@ -15,31 +15,30 @@ NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "").strip()
 GOOGLE_CX = os.environ.get("GOOGLE_CX", "").strip()
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "").strip()
 
-# 시간 설정 (회원님 수정안 반영: 5일)
+# 시간 설정 (5일로 유지)
 time_limit = datetime.now(timezone.utc) - timedelta(days=5)
 five_days_ago = time_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
 today_str = datetime.now().strftime('%Y-%m-%d')
 one_month_ago_str = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+five_days_ago_date = (datetime.now() - timedelta(days=5)).strftime('%Y%m%d')
 
 
 def get_latest_youtube_trends(keywords, max_results=5):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
     
-    # 1단계: 일단 넉넉하게 30개를 가져옵니다. (모수가 많아야 필터링 후에도 생존자가 많음)
+    # 넉넉하게 30개 호출
     request = youtube.search().list(
         part="id", q=keywords, type="video",
         order="viewCount", publishedAfter=five_days_ago, maxResults=30
     )
     search_response = request.execute()
     
-    # 💡 에러 방지: API가 가끔 영상이 아닌 재생목록을 섞어 보낼 때 KeyError가 나는 것을 방지
     video_ids = [item['id']['videoId'] for item in search_response.get("items", []) if 'videoId' in item['id']]
     
     if not video_ids:
-        print("   ⚠️ 유튜브 1차 검색 결과가 없습니다. 키워드나 기간을 확인하세요.")
+        print("   ⚠️ 유튜브 1차 검색 결과가 없습니다.")
         return []
 
-    # 2단계: 추출한 Video ID 묶음으로 '통계(statistics)' 정보를 한 번에 요청합니다.
     stats_request = youtube.videos().list(
         part="snippet,statistics",
         id=",".join(video_ids)
@@ -52,7 +51,7 @@ def get_latest_youtube_trends(keywords, max_results=5):
         view_count = int(stats.get("viewCount", 0))
         like_count = int(stats.get("likeCount", 0))
         
-        # 💡 핵심 검증 장치: 초기 트렌드를 잡기 위해 조회수 1500, 좋아요 30으로 살짝 완화
+        # 💡 허들은 1500으로 유지하되, 제목에 '신상', '리뷰', '먹방' 등 구체적 시그널이 있는 것 위주로
         if view_count >= 1500 or like_count >= 30:
             videos.append({
                 "title": item["snippet"]["title"],
@@ -73,7 +72,8 @@ def get_naver_blog_trends(keyword, max_results=7):
         return []
     
     encText = urllib.parse.quote(keyword)
-    url = f"https://openapi.naver.com/v1/search/blog?query={encText}&display=30&sort=date"
+    # 💡 최신순(date) 유지 + 50개 넉넉히 가져와서 독하게 필터링
+    url = f"https://openapi.naver.com/v1/search/blog?query={encText}&display=50&sort=date"
     req = urllib.request.Request(url, headers={
         'X-Naver-Client-Id': NAVER_CLIENT_ID,
         'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
@@ -83,13 +83,12 @@ def get_naver_blog_trends(keyword, max_results=7):
         with urllib.request.urlopen(req) as response:
             result = json.loads(response.read().decode('utf-8'))
             
-            # 회원님의 5일 로직에 맞춰 블로그도 5일로 통일할 수 있지만, 일단 가장 최근 반응을 위해 3일 유지
-            three_days_ago_date = (datetime.now() - timedelta(days=3)).strftime('%Y%m%d')
-            spam_keywords = ["소정의 원고료", "제공받아", "업체로부터", "협찬", "지원받아"]
+            # 💡 스팸/광고 거름망 대폭 강화 (최신순의 맹점 극복)
+            spam_keywords = ["소정의 원고료", "제공받아", "업체로부터", "협찬", "지원받아", "체험단", "무상으로", "지원받았습니다"]
             filtered_blogs = []
             
             for item in result.get('items', []):
-                if item.get('postdate', '') >= three_days_ago_date:
+                if item.get('postdate', '') >= five_days_ago_date:
                     desc_text = item['description'].replace("<b>", "").replace("</b>", "")
                     
                     if any(spam in desc_text for spam in spam_keywords):
@@ -112,7 +111,6 @@ def get_naver_blog_trends(keyword, max_results=7):
 
 
 def get_community_trends(query, max_results=7):
-    """구글 맞춤검색 엔진 ID(GOOGLE_CX)를 활용하여 SNS 차단을 우회하여 검색합니다."""
     if not GOOGLE_API_KEY or not GOOGLE_CX:
         return []
     try:
@@ -120,7 +118,7 @@ def get_community_trends(query, max_results=7):
         res = service.cse().list(
             q=query, 
             cx=GOOGLE_CX, 
-            dateRestrict="d3", 
+            dateRestrict="d5", # 💡 블로그/유튜브와 통일성 있게 최근 5일(d5)로 수정
             num=max_results
         ).execute()
         return [{
@@ -160,42 +158,40 @@ def get_naver_trend(keyword):
 def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
     import time
 
-    # 확실하게 구동되는 최신 공식 모델들로만 재배치
     MODEL_FALLBACKS = [
         "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-1.5-flash"
     ]
 
+    # 💡 극약 처방 프롬프트: 요약 금지, 카테고리화 금지, 날것의 고유명사 강제
     prompt = f"""
-당신은 대한민국 F&B(식음료) 트렌드 전문 분석가입니다.
+당신은 대한민국 2030 소비자들의 트렌드를 날카롭게 짚어내는 F&B 에디터입니다.
 아래는 최근 5일간 수집된 유튜브, 네이버 블로그, 커뮤니티 데이터입니다.
 
 [유튜브]
 {json.dumps(videos_data, ensure_ascii=False)}
-
 [네이버 블로그]
 {json.dumps(blogs_data, ensure_ascii=False)}
-
 [커뮤니티/SNS]
 {json.dumps(community_data, ensure_ascii=False)}
 
-위 [수집된 데이터]만을 바탕으로 현재 한국에서 화제인 F&B 아이템을 추출하세요.
+위 데이터를 바탕으로 현재 한국에서 화제인 F&B 아이템을 추출하세요.
 
-🚨 [매우 중요한 엄격한 규칙] 🚨
-1. 절대 지어내지 마세요: 반드시 위 데이터에 존재하는 아이템만 추출하세요. 과거의 유행(예: 두바이 초콜릿 등)을 임의로 추가하면 안 됩니다.
-2. 억지로 채우지 마세요: 확실한 트렌드가 3개뿐이라면 3개만 출력하세요. 5개를 무리해서 채울 필요 없습니다. (최대 5개)
-3. 중복 금지: 중복되거나 유사한 아이템(예: '버터떡'과 'CU 버터떡')은 반드시 하나의 항목으로 통합하세요.
-4. 출처 표기: 아이템을 도출하는 데 가장 큰 도움이 된 데이터의 URL 하나를 `source_link`에 넣고, 그 출처가 어디인지 `source_name`("유튜브", "네이버 블로그", "커뮤니티" 중 택 1)에 적어주세요.
+🚨 [매우 엄격한 핀포인트 추출 규칙] 🚨
+1. **요약/카테고리화 절대 금지:** '프리미엄 디저트', '버터떡', '두바이 초콜릿류' 같이 뭉뚱그린 표현은 절대 금지합니다.
+2. **구체적인 고유명사만 허용:** 데이터에 등장하는 날것의 상품명(예: 'CU 돼지바 모나카', '스타벅스 프렌치 바닐라 라떼', '연세우유 피스타치오')을 그대로 'title'에 적어주세요.
+3. 두바이 초콜릿, 탕후루, 마라탕 같은 '예전 메가 트렌드'가 언급되어도 무시하고, **새롭게 언급되는 신상품**을 우선시하세요.
+4. 확실하고 뾰족한 아이템이 2~3개뿐이라면 무리하게 5개를 채우지 말고 2~3개만 출력하세요. (최대 5개)
 
-아래 JSON 형식으로만 출력하세요. 백틱(```)이나 추가 설명 없이 순수 JSON만 출력하세요.
+[출력 JSON 형식]
 {{
   "updated_at": "{today_str}",
   "summary": "오늘의 트렌드 핵심 요약 한 문장",
   "trends": [
     {{
-      "title": "상품명 (정확하게)",
-      "description": "화제 이유 2~3문장 요약",
+      "title": "상품명 (구체적인 고유명사 핀포인트)",
+      "description": "화제 이유 2~3문장",
       "sentiment": "hot",
       "keywords": ["키워드1", "키워드2"],
       "mentioned_in": ["youtube", "naver_blog", "community"],
@@ -210,7 +206,6 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
     last_error = None
 
     for model in MODEL_FALLBACKS:
-        # ✅ 마크다운 기호 완전히 제거! 파이썬이 인식할 수 있는 순수 URL로 수정
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
         print(f"   🤖 모델 시도: {model}")
 
@@ -226,7 +221,6 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
                     result = json.loads(res_body)
                     text = result['candidates'][0]['content']['parts'][0]['text'].strip()
                     
-                    # ✅ JSON 변환 에러 파싱 로직
                     start_idx = text.find('{')
                     end_idx = text.rfind('}')
                     if start_idx != -1 and end_idx != -1:
@@ -299,22 +293,22 @@ if __name__ == "__main__":
             raise ValueError("GEMINI_API_KEY 시크릿이 설정되지 않았습니다!")
 
         print("1. 유튜브 최신 트렌드 수집 중...")
-        # 💡 유튜브 검색 API 키워드 최적화: 검색이 잘 잡히도록 유튜브 친화적인 핵심 키워드로 재구성
+        # 💡 유튜브 검색어 핀셋 조정: '먹방', '핫플' 같은 포괄적 단어 버리고 철저히 '신상/신메뉴' 리뷰 위주로!
         recent_videos = get_latest_youtube_trends(
-            "편의점 신상|디저트 먹방|신메뉴 리뷰|핫플 디저트",
+            "편의점 신상 리뷰|CU 신상|GS25 신상|디저트 신메뉴",
             max_results=7
         )
         print(f"   → 영상 {len(recent_videos)}개 수집 완료.")
 
         print("2. 네이버 블로그 수집 중...")
-        recent_blogs = get_naver_blog_trends("편의점 신상 유행 디저트 내돈내산", max_results=7)
+        # 💡 블로그 검색어 핀셋 조정: 따끈한 후기만 낚기 위해 '내돈내산' 키워드와 조합
+        recent_blogs = get_naver_blog_trends("편의점 신상 내돈내산", max_results=7)
 
         print("3. 커뮤니티 수집 중...")
-        # 💡 구글 검색은 OR 기호가 정상 작동합니다.
-        community_query = "(site:twitter.com OR site:x.com OR site:instiz.net OR site:theqoo.net) (편의점 신상 OR 신상 디저트 OR 유행 막차 OR 품절)"
+        community_query = "(site:twitter.com OR site:x.com OR site:instiz.net OR site:theqoo.net) (편의점 신상 OR 편의점 존맛 OR 미쳤다 OR 품절)"
         recent_community = get_community_trends(community_query, max_results=7)
 
-        print("4. Gemini AI 트렌드 분석 중...")
+        print("4. Gemini AI 핀포인트 분석 중...")
         ai_json_str = summarize_with_ai(recent_videos, recent_blogs, recent_community)
         
         trend_data = json.loads(ai_json_str)
