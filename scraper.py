@@ -15,9 +15,9 @@ NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "").strip()
 GOOGLE_CX = os.environ.get("GOOGLE_CX", "").strip()
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "").strip()
 
-# 시간 설정
+# 시간 설정 (회원님 수정안 반영: 5일)
 time_limit = datetime.now(timezone.utc) - timedelta(days=5)
-fifth_days_ago = time_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
+five_days_ago = time_limit.strftime('%Y-%m-%dT%H:%M:%SZ')
 today_str = datetime.now().strftime('%Y-%m-%d')
 one_month_ago_str = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
 
@@ -25,16 +25,18 @@ one_month_ago_str = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
 def get_latest_youtube_trends(keywords, max_results=5):
     youtube = build('youtube', 'v3', developerKey=YOUTUBE_API_KEY)
     
-    # 1단계: 일단 넉넉하게 15개를 가져옵니다.
+    # 1단계: 일단 넉넉하게 30개를 가져옵니다. (모수가 많아야 필터링 후에도 생존자가 많음)
     request = youtube.search().list(
         part="id", q=keywords, type="video",
-        order="viewCount", publishedAfter=fifth_days_ago, maxResults=20
+        order="viewCount", publishedAfter=five_days_ago, maxResults=30
     )
     search_response = request.execute()
     
-    video_ids = [item['id']['videoId'] for item in search_response.get("items", [])]
+    # 💡 에러 방지: API가 가끔 영상이 아닌 재생목록을 섞어 보낼 때 KeyError가 나는 것을 방지
+    video_ids = [item['id']['videoId'] for item in search_response.get("items", []) if 'videoId' in item['id']]
     
     if not video_ids:
+        print("   ⚠️ 유튜브 1차 검색 결과가 없습니다. 키워드나 기간을 확인하세요.")
         return []
 
     # 2단계: 추출한 Video ID 묶음으로 '통계(statistics)' 정보를 한 번에 요청합니다.
@@ -50,8 +52,8 @@ def get_latest_youtube_trends(keywords, max_results=5):
         view_count = int(stats.get("viewCount", 0))
         like_count = int(stats.get("likeCount", 0))
         
-        # 💡 핵심 검증 장치: 최소 반응도 필터링
-        if view_count >= 5000 or like_count >= 50:
+        # 💡 핵심 검증 장치: 초기 트렌드를 잡기 위해 조회수 1500, 좋아요 30으로 살짝 완화
+        if view_count >= 1500 or like_count >= 30:
             videos.append({
                 "title": item["snippet"]["title"],
                 "description": item["snippet"]["description"][:100],
@@ -81,6 +83,7 @@ def get_naver_blog_trends(keyword, max_results=7):
         with urllib.request.urlopen(req) as response:
             result = json.loads(response.read().decode('utf-8'))
             
+            # 회원님의 5일 로직에 맞춰 블로그도 5일로 통일할 수 있지만, 일단 가장 최근 반응을 위해 3일 유지
             three_days_ago_date = (datetime.now() - timedelta(days=3)).strftime('%Y%m%d')
             spam_keywords = ["소정의 원고료", "제공받아", "업체로부터", "협찬", "지원받아"]
             filtered_blogs = []
@@ -166,7 +169,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
 
     prompt = f"""
 당신은 대한민국 F&B(식음료) 트렌드 전문 분석가입니다.
-아래는 최근 3일간 수집된 유튜브, 네이버 블로그, 커뮤니티 데이터입니다.
+아래는 최근 5일간 수집된 유튜브, 네이버 블로그, 커뮤니티 데이터입니다.
 
 [유튜브]
 {json.dumps(videos_data, ensure_ascii=False)}
@@ -207,8 +210,7 @@ def summarize_with_ai(videos_data, blogs_data, community_data, max_retries=3):
     last_error = None
 
     for model in MODEL_FALLBACKS:
-        # ✅ 마크다운 링크 형식을 제거하고 순수한 URL 문자열만 사용하도록 수정
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+        url = f"[https://generativelanguage.googleapis.com/v1beta/models/](https://generativelanguage.googleapis.com/v1beta/models/){model}:generateContent?key={GEMINI_API_KEY}"
         print(f"   🤖 모델 시도: {model}")
 
         for attempt in range(max_retries):
@@ -296,8 +298,9 @@ if __name__ == "__main__":
             raise ValueError("GEMINI_API_KEY 시크릿이 설정되지 않았습니다!")
 
         print("1. 유튜브 최신 트렌드 수집 중...")
+        # 💡 유튜브 검색 API는 OR 대신 | 기호를 써야 합니다! (매우 중요)
         recent_videos = get_latest_youtube_trends(
-            "편의점 신상 OR 신상 디저트 OR 디저트 유행 OR 유행 막차",
+            "편의점 신상|신상 디저트|디저트 유행|유행 막차",
             max_results=7
         )
         print(f"   → 영상 {len(recent_videos)}개 수집 완료.")
@@ -306,6 +309,7 @@ if __name__ == "__main__":
         recent_blogs = get_naver_blog_trends("편의점 신상 유행 디저트 내돈내산", max_results=7)
 
         print("3. 커뮤니티 수집 중...")
+        # 💡 구글 검색은 OR 기호가 정상 작동합니다.
         community_query = "(site:twitter.com OR site:x.com OR site:instiz.net OR site:theqoo.net) (편의점 신상 OR 신상 디저트 OR 유행 막차 OR 품절)"
         recent_community = get_community_trends(community_query, max_results=7)
 
